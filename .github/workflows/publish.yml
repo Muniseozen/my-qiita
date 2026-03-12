@@ -1,0 +1,27 @@
+name: Publish to Qiita
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "public/**"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Qiita CLI
+        run: npm install -g @qiita/qiita-cli
+
+      - name: Publish articles
+        run: qiita publish --all
+        env:
+          QIITA_TOKEN: ${{ secrets.QIITA_TOKEN }}
