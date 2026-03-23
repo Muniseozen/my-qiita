@@ -1,9 +1,11 @@
 ---
-title: 'ターミナルなしでQiita記事をGitHubで管理する方法'
+title: 'Qiitaの記事をGitHubで管理する【手順まとめ】'
 tags:
-  - name: 'Qiita'
   - name: 'GitHub'
-  - name: 'GitHubDesktop'
+  - name: '手順書'
+  - name: '自動化'
+  - name: 'バージョン管理'
+  - name: 'Qiita記事'
 private: false
 updated_at: ''
 id: '542c3504397a48ab7246'
