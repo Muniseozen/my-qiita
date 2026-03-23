@@ -1,5 +1,5 @@
 ---
-title: 'SwiftUI + Firebase（Auth & Firestore）を導入して認証とDB機能を実装する'
+title: 'SwiftUI + Firebaseで認証とDB機能を実装する'
 tags:
   - name: 'Swift'
   - name: 'SwiftUI'
