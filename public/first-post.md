@@ -1,4 +1,17 @@
-この記事では、**ターミナルをほぼ使わずに**  
+---
+title: 'ターミナルなしでQiita記事をGitHubで管理する方法'
+tags:
+  - name: 'Qiita'
+  - name: 'GitHub'
+  - name: 'GitHubDesktop'
+private: false
+updated_at: ''
+id: null
+organization_url_name: null
+slide: false
+---
+
+この記事では、**ターミナルをほぼ使わずに**
 Qiitaの記事をGitHubで管理する方法を紹介します。
 
 1. [GitHubでリポジトリを作成](#1-githubでリポジトリを作成)
