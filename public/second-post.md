@@ -15,11 +15,9 @@ slide: false
 
 ## はじめに
 
-SwiftUIで開発中の言語学習アプリ「Mochibo」に、Firebase Authentication（メール/パスワード認証）と Cloud Firestore（データベース）を導入しました。
+SwiftUIアプリにFirebase Authentication（メール/パスワード認証）と Cloud Firestore（データベース）を導入する手順をまとめます。
 
-もともとSwiftDataでローカル保存していたフレーズデータを、Firestoreに移行してユーザーごとにクラウド同期する構成にしています。
-
-この記事では、セットアップから実装まで一通りまとめます。
+この記事では、簡単なメモアプリを例に、**ユーザー登録・ログイン・データのCRUD・リアルタイム同期**までを一通り実装します。
 
 ## 環境
 
@@ -28,24 +26,21 @@ SwiftUIで開発中の言語学習アプリ「Mochibo」に、Firebase Authentic
 - Swift 5.9+
 - Firebase iOS SDK（SPM）
 
-## 全体構成
+## 完成イメージ
 
 ```
-Mochibo/
-├── MochiboApp.swift              # Firebase初期化
-├── ContentView.swift             # 認証画面 ↔ メイン画面の切り替え
+MyApp/
+├── MyApp.swift                # Firebase初期化
+├── ContentView.swift          # 認証 ↔ メイン画面の切り替え
 ├── Services/
-│   ├── AuthService.swift         # Firebase Auth ラッパー
-│   └── FirestoreService.swift    # Firestore CRUD + リアルタイムリスナー
+│   ├── AuthService.swift      # Firebase Auth ラッパー
+│   └── FirestoreService.swift # Firestore CRUD + リアルタイムリスナー
 ├── Models/
-│   └── Phrase.swift              # Codable構造体（旧SwiftData @Model）
+│   └── Memo.swift             # Firestoreモデル
 └── Views/
-    ├── MainTabView.swift
-    ├── MyPhrasesView.swift       # フレーズ一覧（Firestore連携）
-    ├── ProfileView.swift         # ログアウト機能
-    └── Phrases/
-        ├── AddPhraseView.swift   # フレーズ追加（Firestore書き込み）
-        └── PracticeView.swift
+    ├── HomeView.swift         # メモ一覧
+    ├── AddMemoView.swift      # メモ追加
+    └── ProfileView.swift      # ログアウト
 ```
 
 **Firestoreのデータ構造：**
@@ -53,10 +48,10 @@ Mochibo/
 ```
 users/
   └── {uid}/
-      └── phrases/
-          └── {phraseId}/
-              ├── originalText: String
-              ├── translatedText: String
+      └── memos/
+          └── {memoId}/
+              ├── title: String
+              ├── body: String
               └── createdAt: Timestamp
 ```
 
@@ -78,13 +73,15 @@ users/
 https://github.com/firebase/firebase-ios-sdk
 ```
 
-追加するライブラリ：
+![SPMでFirebase SDKを追加](https://raw.githubusercontent.com/Muniseozen/my-qiita/main/public/images/add-package.png)
+
+パッケージ製品の選択画面で以下の2つにチェック：
 - `FirebaseAuth`
 - `FirebaseFirestore`
 
-## 2. Firebase初期化（MochiboApp.swift）
+## 2. Firebase初期化（App.swift）
 
-`AppDelegate`で`FirebaseApp.configure()`を呼び、`AuthService`と`FirestoreService`を`@StateObject`で保持します。
+`AppDelegate`で`FirebaseApp.configure()`を呼び、サービスを`@StateObject`で保持して`environmentObject`で配布します。
 
 ```swift
 import SwiftUI
@@ -101,7 +98,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 }
 
 @main
-struct MochiboApp: App {
+struct MyApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
     @StateObject private var authService = AuthService()
@@ -122,7 +119,7 @@ struct MochiboApp: App {
 }
 ```
 
-**ポイント：** サインアウト時に`stopListening()`を呼んでFirestoreリスナーを解除しています。`onDisappear`ではなく認証状態の変化に連動させることで、アプリのバックグラウンド遷移などで意図せずリスナーが切れるのを防ぎます。
+**ポイント：** サインアウト時に`stopListening()`でFirestoreリスナーを解除します。`onDisappear`ではなく認証状態の変化に連動させることで、バックグラウンド遷移などで意図せずリスナーが切れるのを防ぎます。
 
 ## 3. AuthService（認証サービス）
 
@@ -160,6 +157,8 @@ final class AuthService: ObservableObject {
         if let handle { Auth.auth().removeStateDidChangeListener(handle) }
     }
 
+    // MARK: - サインアップ
+
     func signUp(email: String, password: String) async {
         isLoading = true
         errorMessage = nil
@@ -171,6 +170,8 @@ final class AuthService: ObservableObject {
         isLoading = false
     }
 
+    // MARK: - サインイン
+
     func signIn(email: String, password: String) async {
         isLoading = true
         errorMessage = nil
@@ -181,6 +182,8 @@ final class AuthService: ObservableObject {
         }
         isLoading = false
     }
+
+    // MARK: - パスワードリセット
 
     func resetPassword(email: String) async -> Bool {
         isLoading = true
@@ -196,6 +199,8 @@ final class AuthService: ObservableObject {
         }
     }
 
+    // MARK: - サインアウト
+
     func signOut() {
         do {
             try Auth.auth().signOut()
@@ -207,13 +212,13 @@ final class AuthService: ObservableObject {
 ```
 
 **設計のポイント：**
-- `isLoading`で各操作中のローディング状態を管理
-- `errorMessage`でUIにエラーを表示可能
-- `onSignOut`コールバックで外部（Firestoreリスナー解除など）に通知
+- `isLoading` → ボタンの無効化やProgressView表示に使用
+- `errorMessage` → UIにエラーバナーを表示
+- `onSignOut` → Firestoreリスナー解除など外部への通知用
 
 ## 4. FirestoreService（データベースサービス）
 
-ユーザーごとの`phrases`サブコレクションに対してCRUD操作とリアルタイム同期を行います。
+ユーザーごとのサブコレクションに対してCRUD操作とリアルタイム同期を行います。
 
 ```swift
 import Foundation
@@ -222,19 +227,23 @@ import FirebaseFirestore
 
 @MainActor
 final class FirestoreService: ObservableObject {
-    @Published var phrases: [Phrase] = []
+    @Published var memos: [Memo] = []
     @Published var isLoading = false
 
     private let db = Firestore.firestore()
     private var listener: ListenerRegistration?
 
-    private var phrasesCollection: CollectionReference? {
+    // MARK: - コレクション参照
+
+    private var memosCollection: CollectionReference? {
         guard let uid = Auth.auth().currentUser?.uid else { return nil }
-        return db.collection("users").document(uid).collection("phrases")
+        return db.collection("users").document(uid).collection("memos")
     }
 
+    // MARK: - リアルタイムリスナー
+
     func startListening() {
-        guard let collection = phrasesCollection else { return }
+        guard let collection = memosCollection else { return }
         isLoading = true
 
         listener = collection
@@ -245,12 +254,12 @@ final class FirestoreService: ObservableObject {
                     self.isLoading = false
 
                     if let error {
-                        print("Firestore listen error: \(error.localizedDescription)")
+                        print("Firestore error: \(error.localizedDescription)")
                         return
                     }
 
-                    self.phrases = snapshot?.documents.compactMap { doc in
-                        try? doc.data(as: Phrase.self)
+                    self.memos = snapshot?.documents.compactMap { doc in
+                        try? doc.data(as: Memo.self)
                     } ?? []
                 }
             }
@@ -259,194 +268,243 @@ final class FirestoreService: ObservableObject {
     func stopListening() {
         listener?.remove()
         listener = nil
-        phrases = []
+        memos = []
     }
 
-    func addPhrase(originalText: String, translatedText: String) async throws {
-        guard let collection = phrasesCollection else { return }
-        let phrase = Phrase(originalText: originalText, translatedText: translatedText)
-        try collection.addDocument(from: phrase)
+    // MARK: - 追加
+
+    func addMemo(title: String, body: String) async throws {
+        guard let collection = memosCollection else { return }
+        let memo = Memo(title: title, body: body)
+        try collection.addDocument(from: memo)
     }
 
-    func deletePhrase(_ phrase: Phrase) async throws {
-        guard let collection = phrasesCollection,
-              let id = phrase.id else { return }
+    // MARK: - 削除
+
+    func deleteMemo(_ memo: Memo) async throws {
+        guard let collection = memosCollection,
+              let id = memo.id else { return }
         try await collection.document(id).delete()
     }
 }
 ```
 
-**ポイント：** `addSnapshotListener`を使うことで、追加・削除の結果がリアルタイムにUIへ反映されます。SwiftDataの`@Query`と同じような感覚で使えます。
+`addSnapshotListener`を使うことで、データの追加・削除がリアルタイムにUIへ反映されます。
 
-## 5. Phraseモデル（SwiftData → Firestore）
+## 5. Firestoreモデル
 
-SwiftDataの`@Model`クラスから、Firestoreの`Codable`構造体に変更しました。
+`@DocumentID`を付けると、FirestoreのドキュメントIDが自動的にマッピングされます。
 
-**Before（SwiftData）：**
-```swift
-import SwiftData
-
-@Model
-final class Phrase {
-    var originalText: String
-    var translatedText: String
-    var createdAt: Date
-}
-```
-
-**After（Firestore）：**
 ```swift
 import Foundation
 import FirebaseFirestore
 
-struct Phrase: Codable, Identifiable {
+struct Memo: Codable, Identifiable {
     @DocumentID var id: String?
-    var originalText: String
-    var translatedText: String
+    var title: String
+    var body: String
     var createdAt: Date
 
-    init(originalText: String, translatedText: String, createdAt: Date = .now) {
-        self.originalText = originalText
-        self.translatedText = translatedText
+    init(title: String, body: String, createdAt: Date = .now) {
+        self.title = title
+        self.body = body
         self.createdAt = createdAt
     }
 }
 ```
 
-`@DocumentID`を付けることで、FirestoreのドキュメントIDが自動的にマッピングされます。
+## 6. 認証画面の切り替え
 
-## 6. 認証画面の切り替え（ContentView）
-
-`authService.isAuthenticated`で認証画面とメイン画面を切り替えます。
+`authService.isAuthenticated`の値でビューを切り替えます。認証成功後に`startListening()`でFirestoreの同期を開始します。
 
 ```swift
 struct ContentView: View {
     @EnvironmentObject var authService: AuthService
     @EnvironmentObject var firestoreService: FirestoreService
 
+    @State private var email = ""
+    @State private var password = ""
+    @State private var isSignUp = true
+
     var body: some View {
         if authService.isAuthenticated {
-            MainTabView(language: $language)
+            HomeView()
                 .onAppear { firestoreService.startListening() }
         } else {
-            authView
+            loginView
+        }
+    }
+
+    private var loginView: some View {
+        VStack(spacing: 16) {
+            TextField("メールアドレス", text: $email)
+                .textFieldStyle(.roundedBorder)
+                .keyboardType(.emailAddress)
+                .autocapitalization(.none)
+
+            SecureField("パスワード", text: $password)
+                .textFieldStyle(.roundedBorder)
+
+            // エラー表示
+            if let error = authService.errorMessage {
+                Text(error)
+                    .foregroundColor(.red)
+                    .font(.caption)
+            }
+
+            Button(isSignUp ? "新規登録" : "ログイン") {
+                Task {
+                    if isSignUp {
+                        await authService.signUp(email: email, password: password)
+                    } else {
+                        await authService.signIn(email: email, password: password)
+                    }
+                }
+            }
+            .disabled(authService.isLoading)
+
+            if authService.isLoading {
+                ProgressView()
+            }
+
+            Button(isSignUp ? "ログインはこちら" : "新規登録はこちら") {
+                isSignUp.toggle()
+                authService.errorMessage = nil
+            }
+            .font(.caption)
+        }
+        .padding(24)
+    }
+}
+```
+
+## 7. メモ一覧画面
+
+`firestoreService.memos`を参照するだけで、リアルタイムにデータが反映されます。
+
+```swift
+struct HomeView: View {
+    @EnvironmentObject var firestoreService: FirestoreService
+    @State private var showAddSheet = false
+
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(firestoreService.memos) { memo in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(memo.title)
+                            .font(.headline)
+                        Text(memo.body)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .lineLimit(2)
+                    }
+                }
+                .onDelete { indexSet in
+                    for index in indexSet {
+                        let memo = firestoreService.memos[index]
+                        Task { try? await firestoreService.deleteMemo(memo) }
+                    }
+                }
+            }
+            .navigationTitle("メモ")
+            .toolbar {
+                Button { showAddSheet = true } label: {
+                    Image(systemName: "plus")
+                }
+            }
+            .sheet(isPresented: $showAddSheet) {
+                AddMemoView()
+            }
         }
     }
 }
 ```
 
-### エラー表示
-
-Firebase Authのエラーメッセージをバナーで表示します。
+## 8. メモ追加画面
 
 ```swift
-@ViewBuilder
-private var errorBanner: some View {
-    if let error = authService.errorMessage {
-        HStack(spacing: 8) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 14))
-            Text(error)
-                .font(.system(size: 12, design: .rounded))
-                .lineLimit(3)
+struct AddMemoView: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var firestoreService: FirestoreService
+
+    @State private var title = ""
+    @State private var body = ""
+    @State private var isSaving = false
+
+    private var canSave: Bool {
+        !title.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                TextField("タイトル", text: $title)
+                TextField("内容", text: $body, axis: .vertical)
+                    .lineLimit(5...10)
+            }
+            .navigationTitle("メモを追加")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("キャンセル") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("保存") { save() }
+                        .disabled(!canSave || isSaving)
+                }
+            }
         }
-        .foregroundColor(.red)
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(.red.opacity(0.08))
-        )
-        .transition(.opacity.combined(with: .offset(y: 8)))
+    }
+
+    private func save() {
+        isSaving = true
+        Task {
+            do {
+                try await firestoreService.addMemo(
+                    title: title.trimmingCharacters(in: .whitespaces),
+                    body: body.trimmingCharacters(in: .whitespaces)
+                )
+                dismiss()
+            } catch {
+                isSaving = false
+            }
+        }
     }
 }
 ```
 
-### サインアップ時のバリデーション
-
-```swift
-MochiButton(title: l.signUp) {
-    guard password == confirmPassword else {
-        authService.errorMessage = l.passwordMismatch
-        return
-    }
-    Task { await authService.signUp(email: email, password: password) }
-}
-```
-
-## 7. View側のSwiftData → Firestore移行
-
-### MyPhrasesView
-
-**Before：**
-```swift
-@Query(sort: \Phrase.createdAt, order: .reverse) private var phrases: [Phrase]
-@Environment(\.modelContext) private var modelContext
-
-// 削除
-modelContext.delete(phrase)
-```
-
-**After：**
-```swift
-@EnvironmentObject var firestoreService: FirestoreService
-
-// 参照
-firestoreService.phrases
-
-// 削除
-Task { try? await firestoreService.deletePhrase(phrase) }
-```
-
-### AddPhraseView
-
-**Before：**
-```swift
-let phrase = Phrase(originalText: ..., translatedText: ...)
-modelContext.insert(phrase)
-```
-
-**After：**
-```swift
-try await firestoreService.addPhrase(originalText: ..., translatedText: ...)
-```
-
-## 8. ログアウト機能（ProfileView）
+## 9. ログアウト
 
 ```swift
 struct ProfileView: View {
     @EnvironmentObject var authService: AuthService
 
     var body: some View {
-        // ...
-        Button {
-            authService.signOut()
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "rectangle.portrait.and.arrow.right")
-                Text("ログアウト")
+        VStack(spacing: 24) {
+            if let email = authService.currentUser?.email {
+                Text(email)
+                    .font(.headline)
             }
-            .foregroundColor(.red)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(.red.opacity(0.08))
-            )
+
+            Button(role: .destructive) {
+                authService.signOut()
+            } label: {
+                Label("ログアウト", systemImage: "rectangle.portrait.and.arrow.right")
+            }
         }
+        .padding()
     }
 }
 ```
 
 ## まとめ
 
-| 項目 | Before | After |
-|------|--------|-------|
-| 認証 | なし（ボタンで即遷移） | Firebase Auth |
-| DB | SwiftData（ローカル） | Cloud Firestore |
-| モデル | `@Model` class | `Codable` struct + `@DocumentID` |
-| データ取得 | `@Query` | `addSnapshotListener`（リアルタイム） |
-| データ書き込み | `modelContext.insert/delete` | `addDocument` / `document.delete` |
-| ユーザー分離 | なし | `users/{uid}/phrases/` |
+| 項目 | 実装内容 |
+|------|---------|
+| 認証 | Firebase Auth（メール/パスワード） |
+| DB | Cloud Firestore（`users/{uid}/memos/`） |
+| モデル | `Codable` struct + `@DocumentID` |
+| データ同期 | `addSnapshotListener`（リアルタイム） |
+| 状態管理 | `@StateObject` + `environmentObject` |
 
-SwiftDataからFirestoreへの移行は、モデルを`Codable`構造体に変え、`@Query`の代わりにリアルタイムリスナーを使う形になります。`EnvironmentObject`を使えば、SwiftDataの`@Environment(\.modelContext)`と同じ感覚で各Viewにサービスを注入できます。
+Firebase Auth + Firestoreの組み合わせで、ユーザーごとにデータを分離したアプリが比較的少ないコード量で実装できます。`addSnapshotListener`によるリアルタイム同期は、明示的なリロード処理が不要になるため、UIの実装もシンプルになります。
