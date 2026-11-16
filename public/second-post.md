@@ -1,16 +1,19 @@
 ---
-title: 'SwiftUI + Firebaseで認証とDB機能を実装する'
+title: SwiftUI + Firebaseで認証とDB機能を実装する
 tags:
-  - 'Swift'
-  - 'SwiftUI'
-  - 'Firebase'
-  - 'iOS'
-  - 'Firestore'
+  - iOS
+  - Swift
+  - Firebase
+  - Firestore
+  - SwiftUI
 private: false
-updated_at: '2026-03-23T13:53:25+09:00'
-id: '67b5540259704d32dfcc'
+updated_at: '2026-11-16T22:37:51+09:00'
+id: 67b5540259704d32dfcc
 organization_url_name: null
 slide: false
+ignorePublish: false
+posting_campaign_uuid: null
+agreed_posting_campaign_term: false
 ---
 
 ## はじめに
