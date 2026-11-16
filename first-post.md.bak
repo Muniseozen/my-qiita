@@ -1,11 +1,11 @@
 ---
 title: 'Qiitaの記事をGitHubで管理する【手順まとめ】'
 tags:
-  - name: 'GitHub'
-  - name: '手順書'
-  - name: '自動化'
-  - name: 'バージョン管理'
-  - name: 'Qiita記事'
+  - 'GitHub'
+  - '手順書'
+  - '自動化'
+  - 'バージョン管理'
+  - 'Qiita記事'
 private: false
 updated_at: ''
 id: '542c3504397a48ab7246'

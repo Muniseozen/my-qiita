@@ -1,8 +1,8 @@
 ---
 title: '記事タイトル'
 tags:
-  - name: 'Qiita'
-  - name: 'GitHub'
+  - 'Qiita'
+  - 'GitHub'
 private: false
 updated_at: ''
 id: null

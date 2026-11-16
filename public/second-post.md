@@ -1,11 +1,11 @@
 ---
 title: 'SwiftUI + Firebaseで認証とDB機能を実装する'
 tags:
-  - name: 'Swift'
-  - name: 'SwiftUI'
-  - name: 'Firebase'
-  - name: 'iOS'
-  - name: 'Firestore'
+  - 'Swift'
+  - 'SwiftUI'
+  - 'Firebase'
+  - 'iOS'
+  - 'Firestore'
 private: false
 updated_at: '2026-03-23T13:53:25+09:00'
 id: '67b5540259704d32dfcc'

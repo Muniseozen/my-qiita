@@ -1,11 +1,11 @@
 ---
 title: '【2026年版】AIコーディングエージェントを「チーム開発」に導入する手順まとめ'
 tags:
-  - name: 'AI'
-  - name: 'ClaudeCode'
-  - name: 'チーム開発'
-  - name: 'コードレビュー'
-  - name: '生成AI'
+  - 'AI'
+  - 'ClaudeCode'
+  - 'チーム開発'
+  - 'コードレビュー'
+  - '生成AI'
 private: false
 updated_at: ''
 id: null
