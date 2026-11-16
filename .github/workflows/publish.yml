@@ -6,6 +6,14 @@ on:
       - main
     paths:
       - "public/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   publish:
@@ -13,15 +21,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      # 公式アクション: 投稿後に採番された id / updated_at を自動でコミットし直す
+      - uses: increments/qiita-cli/actions/publish@v1
         with:
-          node-version: "20"
-
-      - name: Install Qiita CLI
-        run: npm install -g @qiita/qiita-cli
-
-      - name: Publish articles
-        run: qiita publish --all
-        env:
-          QIITA_TOKEN: ${{ secrets.QIITA_TOKEN }}
+          qiita-token: ${{ secrets.QIITA_TOKEN }}
+          root: "."

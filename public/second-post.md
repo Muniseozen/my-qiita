@@ -7,8 +7,8 @@ tags:
   - name: 'iOS'
   - name: 'Firestore'
 private: false
-updated_at: null
-id: null
+updated_at: '2026-03-23T13:53:25+09:00'
+id: '67b5540259704d32dfcc'
 organization_url_name: null
 slide: false
 ---
@@ -429,7 +429,7 @@ struct AddMemoView: View {
     @EnvironmentObject var firestoreService: FirestoreService
 
     @State private var title = ""
-    @State private var body = ""
+    @State private var memoBody = ""
     @State private var isSaving = false
 
     private var canSave: Bool {
@@ -440,7 +440,7 @@ struct AddMemoView: View {
         NavigationStack {
             Form {
                 TextField("タイトル", text: $title)
-                TextField("内容", text: $body, axis: .vertical)
+                TextField("内容", text: $memoBody, axis: .vertical)
                     .lineLimit(5...10)
             }
             .navigationTitle("メモを追加")
@@ -462,7 +462,7 @@ struct AddMemoView: View {
             do {
                 try await firestoreService.addMemo(
                     title: title.trimmingCharacters(in: .whitespaces),
-                    body: body.trimmingCharacters(in: .whitespaces)
+                    body: memoBody.trimmingCharacters(in: .whitespaces)
                 )
                 dismiss()
             } catch {
