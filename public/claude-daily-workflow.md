@@ -1,5 +1,5 @@
 ---
-title: Claude CodeでQiita毎日投稿の体制を作った話
+title: 記事をAIと書くコツは、『書かせる』ことじゃなくて『聞いてもらう』ことだった
 tags:
   - ClaudeCode
   - Qiita
