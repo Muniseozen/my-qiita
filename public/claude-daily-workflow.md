@@ -1,5 +1,5 @@
 ---
-title: 記事をAIと書くコツは、『書かせる』ことじゃなくて『聞いてもらう』ことだった
+title: 記事をAIと書くコツは、『書かせる』ことじゃなくて『聞いてもらう』- Claude CodeとQiita毎日投稿の仕組み
 tags:
   - ClaudeCode
   - Qiita
