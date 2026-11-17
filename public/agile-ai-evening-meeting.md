@@ -7,11 +7,13 @@ tags:
   - プロジェクト管理
   - スクラム
 private: false
-updated_at: ''
-id: null
+updated_at: '2026-11-17T20:41:27+09:00'
+id: 55751d6f5ccb4c5ea96c
 organization_url_name: null
 slide: false
 ignorePublish: false
+posting_campaign_uuid: null
+agreed_posting_campaign_term: false
 ---
 # はじめに
 
