@@ -56,22 +56,7 @@ agreed_posting_campaign_term: false
 
 # ウォーターフォールとの違いを図で見る
 
-```mermaid
-flowchart LR
-    subgraph W[ウォーターフォール型]
-    direction LR
-    A1[要件定義] --> B1[設計] --> C1[実装] --> D1[テスト] --> E1[リリース🎉]
-    end
-```
-
-```mermaid
-flowchart LR
-    subgraph A[アジャイル型]
-    direction LR
-    P[小さく計画] --> M[つくる] --> T[試す] --> K[改善する]
-    K -->|次の1〜2週間へ| P
-    end
-```
+![ウォーターフォール型とアジャイル型の比較図](https://raw.githubusercontent.com/Muniseozen/my-qiita/main/public/images/waterfall-vs-agile.png)
 
 | | ウォーターフォール | アジャイル |
 | --- | --- | --- |
