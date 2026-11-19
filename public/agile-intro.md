@@ -31,7 +31,7 @@ agreed_posting_campaign_term: false
 
 **「小さく作って、見せて、直す」を何度も繰り返す開発のやり方**です。
 
-![アジャイル開発のサイクル図](https://raw.githubusercontent.com/Muniseozen/my-qiita/main/public/images/agile-cycle.png)
+![アジャイル開発のサイクル図](https://raw.githubusercontent.com/Muniseozen/my-qiita/main/public/images/agile-cycle.png?v=2)
 
 図のとおり、やることはこの4つのループです。
 
