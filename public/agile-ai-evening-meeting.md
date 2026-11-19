@@ -7,7 +7,7 @@ tags:
   - プロジェクト管理
   - スクラム
 private: false
-updated_at: '2026-11-17T20:41:27+09:00'
+updated_at: '2026-11-20T01:14:09+09:00'
 id: 55751d6f5ccb4c5ea96c
 organization_url_name: null
 slide: false
