@@ -5,13 +5,15 @@ tags:
   - ClaudeCode
   - AI
   - 生成AI
-  - Skills
+  - SKILLS
 private: false
-updated_at: ''
-id: null
+updated_at: '2026-11-25T18:19:38+09:00'
+id: be39790c577c2587957a
 organization_url_name: null
 slide: false
 ignorePublish: false
+posting_campaign_uuid: null
+agreed_posting_campaign_term: false
 ---
 # はじめに
 
