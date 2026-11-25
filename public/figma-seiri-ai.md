@@ -3,15 +3,17 @@ title: デザインはAIに任せない。でもFigmaの「整理」は手伝っ
 tags:
   - Figma
   - AI
-  - デザイン
+  - Design
   - UIUX
   - 業務効率化
 private: false
-updated_at: ''
-id: null
+updated_at: '2026-11-25T18:30:03+09:00'
+id: 0895724396f55da70d7b
 organization_url_name: null
 slide: false
 ignorePublish: false
+posting_campaign_uuid: null
+agreed_posting_campaign_term: false
 ---
 # はじめに
 
